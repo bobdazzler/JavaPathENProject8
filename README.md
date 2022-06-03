@@ -13,5 +13,4 @@ Framework:
 Spring Boot
 Java
 Gradle
-Jacoco
 Docker

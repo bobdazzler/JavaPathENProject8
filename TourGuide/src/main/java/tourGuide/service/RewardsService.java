@@ -1,14 +1,13 @@
 package tourGuide.service;
 
 import java.util.List;
-
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.springframework.stereotype.Service;
-
-import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
-import gpsUtil.location.Location;
-import gpsUtil.location.VisitedLocation;
-import rewardCentral.RewardCentral;
+import locator.Attraction;
+import locator.Location;
+import locator.VisitedLocation;
 import tourGuide.user.User;
 import tourGuide.user.UserReward;
 
@@ -20,12 +19,12 @@ public class RewardsService {
     private int defaultProximityBuffer = 10;
 	private int proximityBuffer = defaultProximityBuffer;
 	private int attractionProximityRange = 200;
-	private final GpsUtil gpsUtil;
-	private final RewardCentral rewardsCentral;
-	
-	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
-		this.gpsUtil = gpsUtil;
-		this.rewardsCentral = rewardCentral;
+	private final GpsUtilService gpsUtilService;
+	private final RewardGetterService rewardGetterService;
+	ExecutorService executorservice = Executors.newFixedThreadPool(100);
+	public RewardsService(GpsUtilService gpsUtilService, RewardGetterService rewardGetterService) {
+		this.gpsUtilService = gpsUtilService;
+		this.rewardGetterService = rewardGetterService;
 	}
 	
 	public void setProximityBuffer(int proximityBuffer) {
@@ -37,8 +36,8 @@ public class RewardsService {
 	}
 	
 	public void calculateRewards(User user) {
-		List<VisitedLocation> userLocations = user.getVisitedLocations();
-		List<Attraction> attractions = gpsUtil.getAttractions();
+		CopyOnWriteArrayList<VisitedLocation> userLocations = user.getVisitedLocations();
+		List<Attraction> attractions = gpsUtilService.getAttractions();
 		
 		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
@@ -59,8 +58,8 @@ public class RewardsService {
 		return getDistance(attraction, visitedLocation.location) > proximityBuffer ? false : true;
 	}
 	
-	private int getRewardPoints(Attraction attraction, User user) {
-		return rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
+	public int getRewardPoints(Attraction attraction, User user) {
+		return rewardGetterService.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
 	}
 	
 	public double getDistance(Location loc1, Location loc2) {
